@@ -2,12 +2,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+.chest_xray
 # C extensions
 *.so
 
 # Distribution / packaging
 .Python
+.chest_xray
 build/
 develop-eggs/
 dist/
@@ -70,6 +71,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+chest_xray
 
 # PyBuilder
 .pybuilder/
