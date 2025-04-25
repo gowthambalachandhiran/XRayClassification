@@ -18,7 +18,7 @@ import io
 # Load the trained model
 @st.cache_resource
 def load_trained_model():
-    model = load_model('mobilenet_model.keras')
+    model = load_model('.\mobilenet_model.keras')
     return model
 
 model = load_trained_model()
