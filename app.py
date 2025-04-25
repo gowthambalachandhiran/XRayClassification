@@ -24,11 +24,11 @@ def load_trained_model():
     return model
 
 
-model_path = os.path.join(os.path.dirname(__file__), 'mobilenet_model.keras')
+model_path = load_model(os.path.join(os.path.dirname(__file__), 'mobilenet_model.keras'))
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Model file not found at {model_path}")
 
-model = load_trained_model()
+model = os.path.join(os.path.dirname(__file__), 'mobilenet_model.keras')
 
 # Define class labels
 class_labels = ['Normal', 'Pneumonia']
