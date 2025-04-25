@@ -14,14 +14,19 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
 import io
-
+import os
 # Load the trained model
 @st.cache_resource
 def load_trained_model():
 
-    model = load_model('mobilenet_model.keras')
+    model_path = os.path.join(os.path.dirname(__file__), 'mobilenet_model.keras')
 
     return model
+
+
+model_path = os.path.join(os.path.dirname(__file__), 'mobilenet_model.keras')
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Model file not found at {model_path}")
 
 model = load_trained_model()
 
