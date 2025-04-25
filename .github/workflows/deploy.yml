@@ -25,7 +25,7 @@ jobs:
 
     - name: Build, Tag, and Push Image to ECR
       run: |
-        docker build -t streamlit-app .
+        docker build --no-cache -t streamlit-app .
         docker tag streamlit-app:latest ${{ secrets.ECR_REPOSITORY }}:latest
         docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
