@@ -26,12 +26,12 @@ jobs:
     - name: Build, Tag, and Push Image to ECR
       run: |
         docker build --no-cache -t streamlit-app .
-        docker tag streamlit-app:latest ${{ secrets.ECR_REPOSITORY }}:latest
+        docker tag xrayserver:latest ${{ secrets.ECR_REPOSITORY }}:latest
         docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
     - name: Verify Image in ECR
       run: |
-        aws ecr describe-images --repository-name streamlit-app --query "imageDetails[?imageTag=='latest'].[imageDigest]" --output text
+        aws ecr describe-images --repository-name xrayserver --query "imageDetails[?imageTag=='latest'].[imageDigest]" --output text
 
     - name: Deploy to EC2 via SSM
       run: |
