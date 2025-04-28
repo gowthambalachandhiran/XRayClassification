@@ -3,7 +3,7 @@ name: Deploy Streamlit App
 on:
   push:
     branches:
-      - main  # Trigger on push to the main branch
+      - main
 
 jobs:
   deploy:
@@ -19,43 +19,33 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Get AWS Account ID
-      id: get-account-id
+    - name: Get AWS Account ID and ECR URL
+      id: ecr-info
       run: |
         echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
-        echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
+        echo "ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com" >> $GITHUB_ENV
+        echo "FULL_ECR_REPO=${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_ENV
 
     - name: Authenticate Docker with ECR
       run: |
-        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
 
     - name: Build, Tag, and Push Image to ECR
       run: |
-        # Build the Docker image without cache
-        docker build --no-cache -t streamlit-app:${GITHUB_SHA} .
-        
-        # Tag the image with both the commit hash and 'latest' tag
-        docker tag streamlit-app:${GITHUB_SHA} $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${GITHUB_SHA}
-        docker tag streamlit-app:${GITHUB_SHA} $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
-        
-        # Push the image to ECR
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${GITHUB_SHA}
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
-
-    - name: Verify Image in ECR
-      run: |
-        aws ecr describe-images --repository-name ${{ secrets.ECR_REPOSITORY }} --query "imageDetails[?imageTag=='${GITHUB_SHA}'].[imageDigest]" --output text
+        docker build -t streamlit-app .
+        docker tag streamlit-app:latest $FULL_ECR_REPO:latest
+        docker push $FULL_ECR_REPO:latest
 
     - name: Deploy to EC2 via SSM
       run: |
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
-          --parameters 'commands=[
-            "docker stop streamlit-container || true",
-            "docker rm streamlit-container || true",
-            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}",
-            "docker pull $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${GITHUB_SHA}",
-            "docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${GITHUB_SHA}"
-          ]' \
+          --parameters commands="[
+            \"docker stop streamlit-container || true\",
+            \"docker rm streamlit-container || true\",
+            \"aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY\",
+            \"docker pull $FULL_ECR_REPO:latest\",
+            \"docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 $FULL_ECR_REPO:latest\"
+          ]" \
           --timeout-seconds 600
