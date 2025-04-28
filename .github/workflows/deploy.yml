@@ -33,16 +33,18 @@ jobs:
 
     - name: Deploy to EC2 via SSM
       run: |
+        COMMANDS=$(cat <<EOF
+        docker stop streamlit-container || true
+        docker rm streamlit-container || true
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        docker pull $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+        docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+        EOF
+        )
+
         aws ssm send-command \
-        --document-name "AWS-RunShellScript" \
-        --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
-        --parameters '{
-          "commands": [
-            "docker stop streamlit-container || true",
-            "docker rm streamlit-container || true",
-            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin '"$AWS_ACCOUNT_ID"'.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com",
-            "docker pull '"$AWS_ACCOUNT_ID"'.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest",
-            "docker run -d --name streamlit-container -p 8501:8501 '"$AWS_ACCOUNT_ID"'.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest"
-          ]
-        }' \
-        --timeout-seconds 600
+          --document-name "AWS-RunShellScript" \
+          --targets "Key=InstanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+          --parameters commands=["$COMMANDS"] \
+          --timeout-seconds 600 \
+          --comment "Deploy Streamlit app to EC2"
