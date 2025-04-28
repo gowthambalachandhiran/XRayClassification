@@ -29,7 +29,7 @@ def display_project_files():
             st.markdown(f"- {file}")
     return project_dir, files
 
-#Corrected the model path
+
 # Load the trained model (only if file exists)
 @st.cache_resource
 def load_trained_model(model_path):
