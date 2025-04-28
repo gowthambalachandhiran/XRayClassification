@@ -18,8 +18,8 @@ import os
 # Function to display files in the project directory
 def display_project_files():
     with st.expander("📁 Show Project Directory Files"):
-        # Use current working directory if __file__ is not available
-        project_dir = os.getcwd() if os.path.dirname(__file__) == '' else os.path.dirname(__file__)
+        # Use current working directory
+        project_dir = os.getcwd()
         
         # If you have a specific folder for your models, you can specify it here:
         # project_dir = "/app/models"  # Example path for models
