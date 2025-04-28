@@ -7,7 +7,8 @@ RUN pip install -r requirements.txt
 
 # Copy application files
 COPY appv1.py .
-COPY mobilenet_model.keras .  # <-- ADD THIS LINE
+# Copy the model file
+COPY mobilenet_model.keras .
 
 EXPOSE 8501
 
