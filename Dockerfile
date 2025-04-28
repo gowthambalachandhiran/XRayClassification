@@ -5,8 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY appv2.py .
-COPY mobilenet_model_quantized.tflite .
+COPY appv1.py .
+COPY mobilenet_model.keras .
 
 EXPOSE 8501
 
