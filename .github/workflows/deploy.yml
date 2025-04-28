@@ -1,4 +1,4 @@
-name: Deploy to AWS EC2
+name: Deploy Streamlit App
 
 on:
   push:
@@ -9,57 +9,36 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Get AWS Account ID
-        id: get-account-id
-        run: |
-          echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+    - name: Authenticate Docker with ECR
+      run: |
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
 
-      - name: Authenticate Docker with ECR
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+    - name: Build, Tag, and Push Image to ECR
+      run: |
+        docker build -t streamlit-app .
+        docker tag streamlit-app:latest ${{ secrets.ECR_REPOSITORY }}:latest
+        docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
-      - name: Create ECR Repository if not exists
-        run: |
-          aws ecr describe-repositories --repository-names "${{ secrets.ECR_REPOSITORY }}" || \
-          aws ecr create-repository --repository-name "${{ secrets.ECR_REPOSITORY }}"
-
-      - name: Build, Tag, and Push Image to ECR
-        run: |
-          docker build --no-cache -t ${{ secrets.ECR_REPOSITORY }} .
-          docker tag ${{ secrets.ECR_REPOSITORY }}:latest "$AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest"
-          docker push "$AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest"
-
-      - name: Verify Image in ECR
-        run: |
-          aws ecr describe-images --repository-name "${{ secrets.ECR_REPOSITORY }}" --query "imageDetails[?imageTag=='latest'].[imageDigest]" --output text
-
-      - name: Deploy to EC2 via SSM
-        run: |
-          ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
-          IMAGE_URI="$ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:latest"
-
-          COMMANDS=$(cat <<EOF
-          docker stop streamlit-container || true
-          docker rm streamlit-container || true
-          aws ecr get-login-password --region "${{ secrets.AWS_REGION }}" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-          docker pull "$IMAGE_URI"
-          docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 "$IMAGE_URI"
-          EOF
-          )
-
-          aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --targets "Key=InstanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
-            --parameters commands=["$COMMANDS"] \
-            --timeout-seconds 600 \
-            --comment "Deploy Streamlit app to EC2"
+    - name: Deploy to EC2 via SSM
+      run: |
+        aws ssm send-command \
+          --document-name "AWS-RunShellScript" \
+          --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+          --parameters 'commands=[
+            "docker stop streamlit-container || true",
+            "docker rm streamlit-container || true",
+            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}",
+            "docker pull ${{ secrets.ECR_REPOSITORY }}:latest",
+            "docker run -d --name streamlit-container -p 8501:8501 ${{ secrets.ECR_REPOSITORY }}:latest"
+          ]' \
+          --timeout-seconds 600
