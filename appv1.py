@@ -18,11 +18,17 @@ import os
 # Function to display files in the project directory
 def display_project_files():
     with st.expander("📁 Show Project Directory Files"):
-        project_dir = os.path.dirname(__file__)
+        # Use current working directory if __file__ is not available
+        project_dir = os.getcwd() if os.path.dirname(__file__) == '' else os.path.dirname(__file__)
+        
+        # If you have a specific folder for your models, you can specify it here:
+        # project_dir = "/app/models"  # Example path for models
+        
         files = os.listdir(project_dir)
         for file in files:
             st.markdown(f"- {file}")
     return project_dir, files
+
 
 # Load the trained model (only if file exists)
 @st.cache_resource
