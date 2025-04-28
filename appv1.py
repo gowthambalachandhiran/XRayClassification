@@ -16,7 +16,7 @@ import cv2
 import os
 #Made changes with display directory content
 # Function to display files in the project directory 
-#Commenting to have the commit done
+
 def display_project_files():
     with st.expander("📁 Show Project Directory Files"):
         # Use current working directory
