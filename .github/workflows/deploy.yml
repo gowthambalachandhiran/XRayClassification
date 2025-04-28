@@ -29,6 +29,10 @@ jobs:
         docker tag streamlit-app:latest ${{ secrets.ECR_REPOSITORY }}:latest
         docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
+    - name: Verify Image in ECR
+      run: |
+        aws ecr describe-images --repository-name streamlit-app --query "imageDetails[?imageTag=='latest'].[imageDigest]" --output text
+
     - name: Deploy to EC2 via SSM
       run: |
         aws ssm send-command \
@@ -39,6 +43,7 @@ jobs:
             "docker rm streamlit-container || true",
             "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}",
             "docker pull ${{ secrets.ECR_REPOSITORY }}:latest",
+            "docker images",
             "docker run -d --name streamlit-container -p 8501:8501 ${{ secrets.ECR_REPOSITORY }}:latest"
           ]' \
           --timeout-seconds 600
