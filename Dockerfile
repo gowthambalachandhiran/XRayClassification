@@ -1,16 +1,13 @@
-FROM python:3.11-slim
-
-# Install dependencies required for building packages like `pickle5`
-RUN apt-get update && \
-    apt-get install -y gcc python3-dev libffi-dev build-essential && \
-    rm -rf /var/lib/apt/lists/*
+FROM python:3.11
 
 WORKDIR /app
 
-COPY . /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy application files
+COPY appv1.py .
+COPY mobilenet_model.keras .  # <-- ADD THIS LINE
 
 EXPOSE 8501
 
