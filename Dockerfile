@@ -9,5 +9,5 @@ COPY appv1.py .
 COPY mobilenet_model.keras .
 
 EXPOSE 8501
-
+#Exposing the 8501 ports
 CMD ["streamlit", "run", "appv2.py", "--server.port=8501", "--server.enableCORS", "false"]
