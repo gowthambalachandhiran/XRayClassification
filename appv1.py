@@ -14,17 +14,12 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
 import os
-#Made changes with display directory content
-# Function to display files in the project directory 
 
+# Function to display files in the project directory 
 def display_project_files():
     with st.expander("📁 Show Project Directory Files"):
         # Use current working directory
-        project_dir = os.getcwd()
-        
-        # If you have a specific folder for your models, you can specify it here:
-        # project_dir = "/app/models"  # Example path for models
-        
+        project_dir = '/app'  # The correct path inside the Docker container
         files = os.listdir(project_dir)
         for file in files:
             st.markdown(f"- {file}")
@@ -86,7 +81,7 @@ project_dir, files = display_project_files()
 
 # Check if model file is present
 model_filename = 'mobilenet_model.keras'
-model_path = os.path.join(project_dir, model_filename)
+model_path = os.path.join('/app', model_filename)  # Use the correct path inside the container
 
 if model_filename in files:
     model = load_trained_model(model_path)
@@ -121,4 +116,3 @@ if uploaded_file is not None and model_loaded:
     st.image(superimposed_img, caption='Grad-CAM', use_column_width=True)
 elif uploaded_file is not None and not model_loaded:
     st.warning("⚠️ Cannot make predictions because model is not loaded.")
-
