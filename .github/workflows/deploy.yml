@@ -1,3 +1,10 @@
+name: Deploy Streamlit App
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,10 +23,12 @@ jobs:
       id: get-account-id
       run: |
         echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+        echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
 
     - name: Authenticate Docker with ECR
       run: |
         aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        docker info  # Debugging step: Verify Docker info and login
 
     - name: Build, Tag, and Push Image to ECR
       run: |
@@ -41,7 +50,7 @@ jobs:
         docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 $AWS_ACCOUNT_ID.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
         EOF
         )
-
+        echo "Sending command to EC2..."
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --targets "Key=InstanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
