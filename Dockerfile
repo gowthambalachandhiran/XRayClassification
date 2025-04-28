@@ -6,7 +6,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy application files
-COPY appv1.py .
+COPY appv2.py .
 # Copy the model file
 COPY mobilenet_model_quantized.tflite .
 
