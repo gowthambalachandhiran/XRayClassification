@@ -28,7 +28,7 @@ def display_project_files():
             st.markdown(f"- {file}")
     return project_dir, files
 
-
+# This is for commit
 # Load the TensorFlow Lite model (only if file exists)
 @st.cache_resource
 def load_tflite_model(model_path):
