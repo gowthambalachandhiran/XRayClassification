@@ -7,9 +7,9 @@ RUN pip install -r requirements.txt
 
 # Copy application files
 COPY appv1.py .
-# Copy the model file into the project
-COPY mobilenet_model.keras .
+# Copy the model file
+COPY mobilenet_model_quantized.tflite .
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "appv1.py", "--server.port=8501", "--server.enableCORS", "false"]
+CMD ["streamlit", "run", "appv2.py", "--server.port=8501", "--server.enableCORS", "false"]
