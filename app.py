@@ -15,13 +15,12 @@ import matplotlib.pyplot as plt
 import cv2
 import io
 import os
+
 # Load the trained model
 @st.cache_resource
 def load_trained_model():
-
     model_path = os.path.join(os.path.dirname(__file__), 'mobilenet_model.keras')
     model = load_model(model_path)
-
     return model
 
 model = load_trained_model()
@@ -66,9 +65,20 @@ def overlay_heatmap(heatmap, img):
     superimposed_img = cv2.addWeighted(img_array, 0.6, heatmap, 0.4, 0)
     return Image.fromarray(superimposed_img)
 
+# Function to display files in the project directory
+def display_project_files():
+    with st.expander("📁 Show Project Directory Files"):
+        project_dir = os.path.dirname(__file__)
+        files = os.listdir(project_dir)
+        for file in files:
+            st.markdown(f"- {file}")
+
 # Streamlit app interface
 st.title("Chest X-Ray Classification: Pneumonia Detection")
 st.write("Upload a chest X-ray image to determine if it indicates Pneumonia or is Normal.")
+
+# Display the project directory files
+display_project_files()
 
 uploaded_file = st.file_uploader("Choose an X-ray image", type=["jpg", "jpeg", "png"])
 
