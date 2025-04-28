@@ -19,33 +19,26 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Get AWS Account ID and ECR URL
-      id: ecr-info
-      run: |
-        echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
-        echo "ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com" >> $GITHUB_ENV
-        echo "FULL_ECR_REPO=${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_ENV
-
     - name: Authenticate Docker with ECR
       run: |
-        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $(echo "${{ secrets.ECR_REPOSITORY }}" | awk -F'/' '{print $1}')
 
-    - name: Build, Tag, and Push Image to ECR
+    - name: Build, Tag, and Push Docker Image
       run: |
         docker build -t streamlit-app .
-        docker tag streamlit-app:latest $FULL_ECR_REPO:latest
-        docker push $FULL_ECR_REPO:latest
+        docker tag streamlit-app:latest ${{ secrets.ECR_REPOSITORY }}:latest
+        docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
     - name: Deploy to EC2 via SSM
       run: |
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
-          --parameters commands="[
-            \"docker stop streamlit-container || true\",
-            \"docker rm streamlit-container || true\",
-            \"aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY\",
-            \"docker pull $FULL_ECR_REPO:latest\",
-            \"docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 $FULL_ECR_REPO:latest\"
-          ]" \
+          --parameters 'commands=[
+            "docker stop streamlit-container || true",
+            "docker rm streamlit-container || true",
+            "aws ecr get-login-password --region '${{ secrets.AWS_REGION }}' | docker login --username AWS --password-stdin $(echo '${{ secrets.ECR_REPOSITORY }}' | awk -F'/' '{print $1}')",
+            "docker pull ${{ secrets.ECR_REPOSITORY }}:latest",
+            "docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 ${{ secrets.ECR_REPOSITORY }}:latest"
+          ]' \
           --timeout-seconds 600
