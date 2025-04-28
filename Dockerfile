@@ -1,13 +1,11 @@
-FROM python:3.11
+FROM python:3.11-slim
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
 COPY appv2.py .
-# Copy the model file
 COPY mobilenet_model_quantized.tflite .
 
 EXPOSE 8501
