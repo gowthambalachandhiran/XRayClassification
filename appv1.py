@@ -14,7 +14,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
 import os
-
+#Made changes with display directory content
 # Function to display files in the project directory
 def display_project_files():
     with st.expander("📁 Show Project Directory Files"):

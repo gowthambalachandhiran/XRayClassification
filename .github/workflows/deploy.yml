@@ -21,17 +21,17 @@ jobs:
 
     - name: Authenticate Docker with ECR
       run: |
-        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 113231054232.dkr.ecr.us-east-1.amazonaws.com
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
     - name: Build, Tag, and Push Image to ECR
       run: |
-        docker build --no-cache -t xrayserver .
-        docker tag xrayserver:latest 113231054232.dkr.ecr.us-east-1.amazonaws.com/xrayserver:latest
-        docker push 113231054232.dkr.ecr.us-east-1.amazonaws.com/xrayserver:latest
+        docker build --no-cache -t ${{ secrets.ECR_REPOSITORY }} .
+        docker tag ${{ secrets.ECR_REPOSITORY }}:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
 
     - name: Verify Image in ECR
       run: |
-        aws ecr describe-images --repository-name xrayserver --query "imageDetails[?imageTag=='latest'].[imageDigest]" --output text
+        aws ecr describe-images --repository-name ${{ secrets.ECR_REPOSITORY }} --query "imageDetails[?imageTag=='latest'].[imageDigest]" --output text
 
     - name: Deploy to EC2 via SSM
       run: |
@@ -42,11 +42,9 @@ jobs:
           "commands": [
             "docker stop streamlit-container || true",
             "docker rm streamlit-container || true",
-            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}",
-            "docker pull ${{ secrets.ECR_REPOSITORY }}:latest",
-            "docker images",
-            "docker run -d --name streamlit-container -p 8501:8501 ${{ secrets.ECR_REPOSITORY }}:latest"
+            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com",
+            "docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest",
+            "docker run -d --name streamlit-container -p 8501:8501 ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest"
           ]
         }' \
         --timeout-seconds 600
-  
