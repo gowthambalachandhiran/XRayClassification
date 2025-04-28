@@ -29,16 +29,17 @@ jobs:
         docker tag streamlit-app:latest ${{ secrets.ECR_REPOSITORY }}:latest
         docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
-    - name: Deploy to EC2 via SSM
+     - name: Deploy to EC2 via SSM
       run: |
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
-          --parameters 'commands=[
+          --parameters commands='[
             "docker stop streamlit-container || true",
             "docker rm streamlit-container || true",
-            "aws ecr get-login-password --region '${{ secrets.AWS_REGION }}' | docker login --username AWS --password-stdin $(echo '${{ secrets.ECR_REPOSITORY }}' | awk -F'/' '{print $1}')",
+            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $(echo '${{ secrets.ECR_REPOSITORY }}' | awk -F'/' '{print $1}')",
             "docker pull ${{ secrets.ECR_REPOSITORY }}:latest",
             "docker run -d --restart unless-stopped --name streamlit-container -p 8501:8501 ${{ secrets.ECR_REPOSITORY }}:latest"
           ]' \
           --timeout-seconds 600
+
