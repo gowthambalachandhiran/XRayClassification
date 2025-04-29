@@ -78,7 +78,7 @@ st.write("Upload a chest X-ray image to determine if it indicates Pneumonia or i
 project_dir, files = display_project_files()
 
 # Check if model file is present
-model_filename = 'mobilenet_model.keras'
+model_filename = 'mobilenet_model.h5'
 model_path = os.path.join(project_dir, model_filename)
 
 st.write(f"🔍 Model path being checked: `{model_path}`")
