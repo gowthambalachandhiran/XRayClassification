@@ -81,6 +81,9 @@ project_dir, files = display_project_files()
 model_filename = 'mobilenet_model.keras'
 model_path = os.path.join(project_dir, model_filename)
 
+st.write(f"🔍 Model path being checked: `{model_path}`")
+st.write(f"❓ Does path exist? `{os.path.exists(model_path)}`")
+
 if model_filename in files:
     model = load_trained_model(model_path)
     model_loaded = True
