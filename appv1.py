@@ -69,7 +69,7 @@ def overlay_heatmap(heatmap, img):
     img_array = np.array(img)
     superimposed_img = cv2.addWeighted(img_array, 0.6, heatmap, 0.4, 0)
     return Image.fromarray(superimposed_img)
-
+#This is for the commit
 # --- Streamlit app interface ---
 st.title("Chest X-Ray Classification: Pneumonia Detection")
 st.write("Upload a chest X-ray image to determine if it indicates Pneumonia or is Normal.")
