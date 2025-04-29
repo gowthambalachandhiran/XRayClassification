@@ -9,8 +9,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code and model file into the container
-COPY appv1.py .
-COPY mobilenet_model.keras .
+COPY appv1.py /app/appv1.py
+
+COPY mobilenet_model.keras /app/mobilenet_model.keras
+
 
 # Expose the port for Streamlit
 EXPOSE 8501
