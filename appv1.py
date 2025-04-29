@@ -15,16 +15,14 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 
-# Function to display files in the project directory 
+# Function to display files in the project directory
 def display_project_files():
     with st.expander("📁 Show Project Directory Files"):
-        # Use current working directory
-        project_dir = '/app'  # The correct path inside the Docker container
+        project_dir = os.getcwd()  # Use current working directory dynamically
         files = os.listdir(project_dir)
         for file in files:
             st.markdown(f"- {file}")
     return project_dir, files
-
 
 # Load the trained model (only if file exists)
 @st.cache_resource
@@ -76,12 +74,12 @@ def overlay_heatmap(heatmap, img):
 st.title("Chest X-Ray Classification: Pneumonia Detection")
 st.write("Upload a chest X-ray image to determine if it indicates Pneumonia or is Normal.")
 
-# First display the project directory files
+# Display project directory files
 project_dir, files = display_project_files()
 
 # Check if model file is present
 model_filename = 'mobilenet_model.keras'
-model_path = os.path.join('/app', model_filename)  # Use the correct path inside the container
+model_path = os.path.join(project_dir, model_filename)
 
 if model_filename in files:
     model = load_trained_model(model_path)
