@@ -15,6 +15,7 @@ import cv2
 import os
 
 # Function to display files in the project directory
+#Making changes for the deployment
 def display_project_files():
     with st.expander("📁 Show Project Directory Files"):
         # Use current working directory
