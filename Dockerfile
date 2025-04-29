@@ -21,11 +21,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code and model file into the container
-COPY appv1.py /app/appv1.py
-COPY mobilenet_model.h5 /app/mobilenet_model.h5
+COPY appv2.py /app/appv2.py
+COPY mobilenet_model_quantized.tflite /app/mobilenet_model_quantized.tflite
 
 # Expose the port for Streamlit
 EXPOSE 8501
 
 # Set the command to run the Streamlit app
-CMD ["streamlit", "run", "appv1.py", "--server.port=8501", "--server.enableCORS=false"]
+CMD ["streamlit", "run", "appv2.py", "--server.port=8501", "--server.enableCORS=false"]
