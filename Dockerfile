@@ -16,7 +16,7 @@ RUN apt-get update && \
         curl \
         && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies with version specified
+# Install Python dependencies with version specified.This is for Sairam
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
